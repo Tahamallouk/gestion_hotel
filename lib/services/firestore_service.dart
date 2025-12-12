@@ -6,7 +6,10 @@ import '../models/reservation.dart';
 import '../utils/paginated_result.dart';
 
 class FirestoreService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  FirestoreService({FirebaseFirestore? firestore})
+      : _db = firestore ?? FirebaseFirestore.instance;
+
+  final FirebaseFirestore _db;
 
   /// Save a user document (keep existing behaviour)
   Future<void> createUser({

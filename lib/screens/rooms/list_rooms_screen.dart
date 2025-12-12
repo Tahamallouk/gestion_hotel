@@ -49,15 +49,15 @@ class _ListRoomsScreenState extends State<ListRoomsScreen> {
 
   void _openAddRoom() async {
     if (!_isAdmin) return;
-    final ctx = context;
-    final res = await Navigator.push(
-      ctx,
-      MaterialPageRoute(builder: (context) => AddRoomScreen(hotel: widget.hotel)),
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final res = await navigator.push<bool?>(
+      MaterialPageRoute(builder: (_) => AddRoomScreen(hotel: widget.hotel)),
     );
 
     if (!mounted) return;
-    if (res == true && mounted) {
-      ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Chambre ajoutée'), backgroundColor: Colors.green));
+    if (res == true) {
+      messenger.showSnackBar(const SnackBar(content: Text('Chambre ajoutée'), backgroundColor: Colors.green));
     }
   }
 
@@ -147,21 +147,20 @@ class _ListRoomsScreenState extends State<ListRoomsScreen> {
                   room: room,
                   onTap: _isAdmin
                       ? () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => EditRoomScreen(room: room)));
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => EditRoomScreen(room: room)));
                         }
                       : null,
                   onBook: room.isAvailable
-                      ? () {
-                          final ctx = context;
-                          Navigator.push<bool?>(
-                            ctx,
-                            MaterialPageRoute(builder: (context) => BookRoomScreen(room: room, hotelId: widget.hotel.id)),
-                          ).then((r) {
-                            if (!mounted) return;
-                            if (r == true && mounted) {
-                              ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Réservation créée'), backgroundColor: Colors.green));
-                            }
-                          });
+                      ? () async {
+                          final navigator = Navigator.of(this.context);
+                          final messenger = ScaffoldMessenger.of(this.context);
+                          final result = await navigator.push<bool?>(
+                            MaterialPageRoute(builder: (_) => BookRoomScreen(room: room, hotelId: widget.hotel.id)),
+                          );
+                          if (!mounted) return;
+                          if (result == true) {
+                            messenger.showSnackBar(const SnackBar(content: Text('Réservation créée'), backgroundColor: Colors.green));
+                          }
                         }
                       : null,
                 );

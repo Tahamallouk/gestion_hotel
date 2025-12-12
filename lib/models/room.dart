@@ -13,15 +13,14 @@ class Room {
     this.id,
     required this.hotelId,
     required this.number,
-    required String type,
+    required this.type,
     String? view,
     int? basePrice,
     int? viewExtra,
     double? price,
     this.capacity = 2,
     this.isAvailable = true,
-    })  : type = type,
-      view = view ?? '',
+  })  : view = view ?? '',
         basePrice = basePrice ?? (price != null ? price.round() : 0),
         viewExtra = viewExtra ?? 0;
 

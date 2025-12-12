@@ -38,35 +38,28 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
             return ReservationCard(
               reservation: r,
               onTap: () async {
-                final ctx = context;
-                final res = await Navigator.push<bool?>(
-                  ctx,
+                final navigator = Navigator.of(this.context);
+                final result = await navigator.push<bool?> (
                   MaterialPageRoute(
-                    builder: (context) => ReservationDetailScreen(reservation: r),
+                    builder: (_) => ReservationDetailScreen(reservation: r),
                   ),
                 );
-                if (res == true && mounted) {
+                if (result == true && mounted) {
                   setState(() => _pagKey = UniqueKey());
                 }
               },
               onCancel: () async {
-                final ctx = context;
+                final messenger = ScaffoldMessenger.of(this.context);
                 try {
                   await _firestore.cancelReservation(r.id ?? '');
-                  if (!mounted) {
-                    return;
-                  }
-                  ScaffoldMessenger.of(ctx).showSnackBar(
+                  if (!mounted) return;
+                  messenger.showSnackBar(
                     const SnackBar(content: Text('Réservation annulée'), backgroundColor: Colors.green),
                   );
-                  if (mounted) {
-                    setState(() => _pagKey = UniqueKey());
-                  }
+                  setState(() => _pagKey = UniqueKey());
                 } catch (e) {
-                  if (!mounted) {
-                    return;
-                  }
-                  ScaffoldMessenger.of(ctx).showSnackBar(
+                  if (!mounted) return;
+                  messenger.showSnackBar(
                     SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.redAccent),
                   );
                 }

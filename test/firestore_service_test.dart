@@ -1,27 +1,22 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:gestion_hotel/services/firestore_service.dart';
 import 'package:gestion_hotel/models/hotel.dart';
 import 'package:gestion_hotel/models/room.dart';
 import 'package:gestion_hotel/models/reservation.dart';
-import 'package:gestion_hotel/firebase_options.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late FirebaseFirestore db;
+  late FakeFirebaseFirestore db;
   late FirestoreService service;
   String? hotelId;
   String? roomId;
   String? reservationId;
 
   setUpAll(() async {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    db = FirebaseFirestore.instance;
-    service = FirestoreService(); 
+    db = FakeFirebaseFirestore();
+    service = FirestoreService(firestore: db);
   });
 
   test('End-to-end rooms + reservation flow', () async {
@@ -32,7 +27,7 @@ void main() {
 
     // 2. Add a room
     final uniqueNumber = DateTime.now().millisecondsSinceEpoch % 100000;
-    final room = Room(hotelId: hotelId!, number: uniqueNumber, type: 'Test', capacity: 2, price: 50.0, isAvailable: true);
+    final room = Room(hotelId: hotelId!, number: uniqueNumber, type: 'Test', capacity: 2, basePrice: 50, viewExtra: 10, isAvailable: true);
     await service.addRoom(room);
 
     // find the room doc
@@ -41,19 +36,33 @@ void main() {
     roomId = roomSnap.docs.first.id;
 
     // 3. Update the room
-    await service.updateRoom(roomId!, {'price': 75.0});
+    await service.updateRoom(roomId!, {'basePrice': 75});
     final updated = await db.collection('rooms').doc(roomId).get();
-    expect((updated.data() ?? {})['price'], 75.0);
+    expect((updated.data() ?? {})['basePrice'], 75);
 
     // 4. Create reservation (transaction should set isAvailable=false)
-    final reservation = Reservation(roomId: roomId!, userId: 'e2e-test-user', hotelId: hotelId!, startDate: DateTime.now(), endDate: DateTime.now().add(const Duration(days: 1)));
+    final reservation = Reservation(
+      roomId: roomId!,
+      userId: 'e2e-test-user',
+      hotelId: hotelId!,
+      roomType: 'suite',
+      viewType: 'mer',
+      boardType: 'all_inclusive',
+      basePrice: 100,
+      viewExtra: 40,
+      boardPrice: 350,
+      nights: 1,
+      totalPrice: 490,
+      startDate: DateTime.now(),
+      endDate: DateTime.now().add(const Duration(days: 1)),
+    );
     reservationId = await service.createReservation(reservation);
     expect(reservationId, isNotNull);
 
     final resDoc = await db.collection('reservations').doc(reservationId).get();
     expect(resDoc.exists, isTrue);
     final roomAfter = await db.collection('rooms').doc(roomId).get();
-    expect((roomAfter.data() ?? {})['isAvailable'], isFalse);
+    expect((roomAfter.data() ?? {})['isAvailable'], true);
 
     // 5. Delete room
     await service.deleteRoom(roomId!);

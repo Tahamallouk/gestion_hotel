@@ -56,8 +56,10 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                           onPressed: reservation.status == 'cancelled'
                               ? null
                               : () async {
+                                  final navigator = Navigator.of(this.context);
+                                  final messenger = ScaffoldMessenger.of(this.context);
                                   final confirm = await showDialog<bool>(
-                                    context: context,
+                                    context: this.context,
                                     builder: (c) => AlertDialog(
                                       title: const Text('Annuler la réservation ?'),
                                       actions: [
@@ -70,12 +72,10 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                                     try {
                                       await firestore.cancelReservation(reservation.id ?? '');
                                       if (!mounted) return;
-                                      final messenger = ScaffoldMessenger.of(context);
                                       messenger.showSnackBar(const SnackBar(content: Text('Réservation annulée'), backgroundColor: Colors.green));
-                                      Navigator.pop(context, true);
+                                      navigator.pop(true);
                                     } catch (e) {
                                       if (!mounted) return;
-                                      final messenger = ScaffoldMessenger.of(context);
                                       messenger.showSnackBar(SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.redAccent));
                                     }
                                   }

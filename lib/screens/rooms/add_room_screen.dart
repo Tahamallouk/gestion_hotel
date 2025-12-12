@@ -92,7 +92,7 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 key: const Key('roomViewDropdown'),
-                value: _view,
+                initialValue: _view,
                 items: const [
                   DropdownMenuItem(value: 'jardin', child: Text('Jardin')),
                   DropdownMenuItem(value: 'piscine', child: Text('Piscine')),

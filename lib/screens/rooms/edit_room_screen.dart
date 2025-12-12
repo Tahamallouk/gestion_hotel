@@ -171,7 +171,7 @@ class _EditRoomScreenState extends State<EditRoomScreen> {
               _buildField(
                 DropdownButtonFormField<String>(
                   key: const Key('editRoomTypeDropdown'),
-                  value: _type,
+                  initialValue: _type,
                   items: const [
                     DropdownMenuItem(value: 'double', child: Text('Double')),
                     DropdownMenuItem(value: 'triple', child: Text('Triple')),
@@ -186,7 +186,7 @@ class _EditRoomScreenState extends State<EditRoomScreen> {
               _buildField(
                 DropdownButtonFormField<String>(
                   key: const Key('editRoomViewDropdown'),
-                  value: _view,
+                  initialValue: _view,
                   items: const [
                     DropdownMenuItem(value: 'jardin', child: Text('Vue Jardin')),
                     DropdownMenuItem(value: 'piscine', child: Text('Vue Piscine')),

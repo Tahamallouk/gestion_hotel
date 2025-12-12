@@ -45,10 +45,9 @@ class _AdminMenuScreenState extends State<AdminMenuScreen> {
       if (!mounted) return;
       Navigator.pop(context);
     } finally {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
-      setState(() => _isLoading = false);
     }
   }
 

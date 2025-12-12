@@ -13,12 +13,8 @@ class RoomCard extends StatelessWidget {
     this.onBook,
   });
 
-  int get _totalPrice => room.basePrice + room.viewExtra;
-
   @override
   Widget build(BuildContext context) {
-    
-
     return GestureDetector(
       key: Key('roomCard_${room.number}'),
       onTap: onTap,

@@ -31,8 +31,8 @@ class Reservation {
     int? boardPrice,
     int? nights,
     int? totalPrice,
-    required DateTime startDate,
-    required DateTime endDate,
+    required this.startDate,
+    required this.endDate,
     this.status = 'pending',
     DateTime? createdAt,
   })  : roomType = roomType ?? '',
@@ -41,10 +41,16 @@ class Reservation {
         basePrice = basePrice ?? 0,
         viewExtra = viewExtra ?? 0,
         boardPrice = boardPrice ?? 0,
-        nights = nights ?? endDate.difference(startDate).inDays,
-        totalPrice = totalPrice ?? ((basePrice ?? 0) + (viewExtra ?? 0) + (boardPrice ?? 0)) * (nights ?? endDate.difference(startDate).inDays),
-        startDate = startDate,
-        endDate = endDate,
+        nights = _resolveNights(nights, startDate, endDate),
+        totalPrice = totalPrice ??
+            _computeTotalPrice(
+              basePrice: basePrice,
+              viewExtra: viewExtra,
+              boardPrice: boardPrice,
+              providedNights: nights,
+              startDate: startDate,
+              endDate: endDate,
+            ),
         createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toMap() => {
@@ -160,5 +166,22 @@ class Reservation {
   @override
   String toString() {
     return 'Reservation{id: $id, userId: $userId, hotelId: $hotelId, roomId: $roomId, roomType: $roomType, viewType: $viewType, boardType: $boardType, basePrice: $basePrice, viewExtra: $viewExtra, boardPrice: $boardPrice, nights: $nights, totalPrice: $totalPrice, startDate: $startDate, endDate: $endDate, status: $status, createdAt: $createdAt}';
+  }
+
+  static int _resolveNights(int? provided, DateTime startDate, DateTime endDate) {
+    return provided ?? endDate.difference(startDate).inDays;
+  }
+
+  static int _computeTotalPrice({
+    required int? basePrice,
+    required int? viewExtra,
+    required int? boardPrice,
+    required int? providedNights,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) {
+    final nightlyRate = (basePrice ?? 0) + (viewExtra ?? 0) + (boardPrice ?? 0);
+    final effectiveNights = _resolveNights(providedNights, startDate, endDate);
+    return nightlyRate * effectiveNights;
   }
 }

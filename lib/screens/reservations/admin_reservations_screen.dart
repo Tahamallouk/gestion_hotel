@@ -67,19 +67,16 @@ class _AdminReservationsScreenState extends State<AdminReservationsScreen> {
                       onTap: () {},
                       showActions: true,
                       onCancel: () async {
+                        final messenger = ScaffoldMessenger.of(this.context);
                         try {
                           await _firestore.cancelReservation(r.id ?? '');
-                          if (!mounted) {
-                            return;
-                          }
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          if (!mounted) return;
+                          messenger.showSnackBar(
                             const SnackBar(content: Text('Réservation annulée'), backgroundColor: Colors.green),
                           );
                         } catch (e) {
-                          if (!mounted) {
-                            return;
-                          }
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          if (!mounted) return;
+                          messenger.showSnackBar(
                             SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.redAccent),
                           );
                         }
