@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "219204731860",
+    "project_id": "gestion-hotel-app-taham5439",
+    "storage_bucket": "gestion-hotel-app-taham5439.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:219204731860:android:24b730355d644fccd14c41",
+        "android_client_info": {
+          "package_name": "com.example.gestion_hotel"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCEDqiKxDcetK9TSR0RszigKg5OcwgIxBE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
