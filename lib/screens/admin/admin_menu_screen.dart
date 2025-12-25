@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:gestion_hotel/services/firestore_service.dart';
-import 'package:gestion_hotel/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'admin_dashboard_screen.dart';
+import 'package:gestion_hotel/models/hotel.dart';
+import 'package:gestion_hotel/screens/admin/admin_dashboard_screen.dart';
+import 'package:gestion_hotel/screens/reservations/admin_reservations_screen.dart';
+import 'package:gestion_hotel/screens/rooms/list_rooms_screen.dart';
+import 'package:gestion_hotel/screens/hotels/list_hotels_screen.dart';
+import 'package:gestion_hotel/screens/admin/hotels/add_hotel_screen.dart';
+import 'package:gestion_hotel/services/auth_service.dart';
+import 'package:gestion_hotel/services/firestore_service.dart';
+import 'package:gestion_hotel/utils/app_theme.dart';
 
 /// Admin Menu Screen - Hub de navigation pour les fonctionnalités admin
 class AdminMenuScreen extends StatefulWidget {
@@ -99,131 +105,192 @@ class _AdminMenuScreenState extends State<AdminMenuScreen> {
     }
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Menu Administration'),
+        title: const Text('Espace Administration'),
         elevation: 0,
+        backgroundColor: AppColors.background,
+        foregroundColor: AppColors.textPrimary,
+        actions: [
+          IconButton(
+            onPressed: _checkAdminRole,
+            tooltip: 'Vérifier les droits',
+            icon: const Icon(Icons.verified_user_outlined),
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header avec bienvenue
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Bienvenue Admin',
-                    style: Theme.of(context).textTheme.headlineSmall,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, AppColors.primaryDark],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Gérez votre système depuis ici',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                ],
+                  borderRadius: const BorderRadius.all(AppBorderRadius.lg),
+                  boxShadow: AppShadows.medium,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: const BorderRadius.all(AppBorderRadius.md),
+                      ),
+                      child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 32),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Bienvenue, administrateur', style: AppTextStyles.subtitle1.copyWith(color: Colors.white)),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Gérez les hôtels, chambres et réservations depuis un hub clair.',
+                            style: AppTextStyles.body2.copyWith(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-            // Menu items
-            Expanded(
-              child: ListView(
-                children: [
-                  _AdminMenuItem(
-                    icon: Icons.dashboard,
-                    title: 'Tableau de bord',
-                    description: 'Voir les statistiques et métriques',
-                    onTap: () {
-                      Navigator.push(
+              Expanded(
+                child: GridView.count(
+                  crossAxisCount: ResponsiveHelper.isTablet(context) ? 2 : 1,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: ResponsiveHelper.isTablet(context) ? 2.4 : 2.1,
+                  children: [
+                    _AdminMenuItem(
+                      icon: Icons.dashboard_outlined,
+                      title: 'Tableau de bord',
+                      description: 'Vue globale des KPI, top hôtels et tendances',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+                      ),
+                    ),
+                    _AdminMenuItem(
+                      icon: Icons.hotel,
+                      title: 'Hôtels',
+                      description: 'Lister, ajouter et consulter les hôtels',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ListHotelsScreen()),
+                      ),
+                      trailing: TextButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AddHotelScreen()),
+                        ),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Ajouter'),
+                      ),
+                    ),
+                    _AdminMenuItem(
+                      icon: Icons.door_front_door_outlined,
+                      title: 'Chambres',
+                      description: 'Surveiller la disponibilité et les tarifs',
+                      onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (c) => const AdminDashboardScreen(),
+                          builder: (_) => ListRoomsScreen(
+                            hotel: Hotel(name: 'N/A', city: '', address: ''),
+                          ),
                         ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _AdminMenuItem(
-                    icon: Icons.hotel,
-                    title: 'Gestion des hôtels',
-                    description: 'Ajouter, modifier, supprimer des hôtels',
-                    onTap: () {
-                      // TODO: Navigate to HotelsManagementScreen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('À venir...')),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _AdminMenuItem(
-                    icon: Icons.door_sliding,
-                    title: 'Gestion des chambres',
-                    description: 'Ajouter, modifier, supprimer des chambres',
-                    onTap: () {
-                      // TODO: Navigate to RoomsManagementScreen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('À venir...')),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _AdminMenuItem(
-                    icon: Icons.calendar_month,
-                    title: 'Gestion des réservations',
-                    description: 'Voir et gérer toutes les réservations',
-                    onTap: () {
-                      // TODO: Navigate to AdminReservationsScreen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('À venir...')),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _AdminMenuItem(
-                    icon: Icons.people,
-                    title: 'Gestion des utilisateurs',
-                    description: 'Gérer les rôles et permissions',
-                    onTap: () {
-                      // TODO: Navigate to UsersManagementScreen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('À venir...')),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _AdminMenuItem(
-                    icon: Icons.settings,
-                    title: 'Paramètres admin',
-                    description: 'Configurer les paramètres du système',
-                    onTap: () {
-                      // TODO: Navigate to AdminSettingsScreen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('À venir...')),
-                      );
-                    },
-                  ),
-                ],
+                      ),
+                    ),
+                    _AdminMenuItem(
+                      icon: Icons.calendar_month,
+                      title: 'Réservations',
+                      description: 'Filtrer, annuler et exporter les réservations',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AdminReservationsScreen()),
+                      ),
+                    ),
+                    _AdminMenuItem(
+                      icon: Icons.currency_exchange_outlined,
+                      title: 'Convertisseur de devises',
+                      description: 'Support international et conversion',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => Scaffold(
+                            appBar: AppBar(title: const Text('Convertisseur de Devises')),
+                            body: const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Center(
+                                child: Text('Fonctionnalité en cours de développement'),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    _AdminMenuItem(
+                      icon: Icons.euro_outlined,
+                      title: 'Éditeur de Prix',
+                      description: 'Testez et convertissez les tarifs en temps réel',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => Scaffold(
+                            appBar: AppBar(title: const Text('Éditeur de Prix Interactif')),
+                            body: const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Center(
+                                child: Text('Éditeur de prix en cours de développement'),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    _AdminMenuItem(
+                      icon: Icons.settings_outlined,
+                      title: 'Paramètres',
+                      description: 'Rôles, notifications et règles métiers',
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Paramètres admin à venir')),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 12),
 
-            // Logout button
-            ElevatedButton.icon(
-              onPressed: _handleLogout,
-              icon: const Icon(Icons.logout),
-              label: const Text('Déconnexion'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+              ElevatedButton.icon(
+                onPressed: _handleLogout,
+                icon: const Icon(Icons.logout),
+                label: const Text('Déconnexion'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(AppBorderRadius.md),
+                  ),
+                  elevation: 0,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -236,21 +303,29 @@ class _AdminMenuItem extends StatelessWidget {
   final String title;
   final String description;
   final VoidCallback onTap;
+  final Widget? trailing;
 
   const _AdminMenuItem({
     required this.icon,
     required this.title,
     required this.description,
     required this.onTap,
+    this.trailing,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
+    return AnimatedContainer(
+      duration: AppDurations.quick,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.all(AppBorderRadius.lg),
+        boxShadow: AppShadows.standard,
+        border: Border.all(color: AppColors.border),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: const BorderRadius.all(AppBorderRadius.lg),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -260,34 +335,30 @@ class _AdminMenuItem extends StatelessWidget {
                 height: 60,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.blue[50],
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primaryLight, AppColors.primary],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
-                child: Icon(icon, color: Colors.blue, size: 32),
+                child: Icon(icon, color: Colors.white, size: 28),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    Text(title, style: AppTextStyles.subtitle1.copyWith(color: AppColors.textPrimary)),
                     const SizedBox(height: 4),
                     Text(
                       description,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: AppTextStyles.body3.copyWith(color: AppColors.textSecondary),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward, color: Colors.grey[400]),
+              if (trailing != null) trailing!,
+              const Icon(Icons.arrow_forward_ios, color: AppColors.textTertiary, size: 16),
             ],
           ),
         ),

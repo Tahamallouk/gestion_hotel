@@ -266,7 +266,7 @@ class _ReservationCardState extends State<ReservationCard> {
             ),
             const SizedBox(height: 4),
             Text(
-              '${widget.totalPrice.toStringAsFixed(2)}€',
+              '${widget.totalPrice.toStringAsFixed(2)} DH',
               style: AppTextStyles.headline4.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.bold,

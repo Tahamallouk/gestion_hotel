@@ -4,6 +4,7 @@ class Reservation {
   final String? id;
   final String userId;
   final String hotelId;
+  final String? hotelName;
   final String roomId;
   final String roomType;
   final String viewType;
@@ -13,8 +14,13 @@ class Reservation {
   final int boardPrice;
   final int nights;
   final int totalPrice;
+  final double? totalPriceSnapshot;
+  final String? qrToken;
   final DateTime startDate;
   final DateTime endDate;
+  final DateTime? checkInDate;
+  final DateTime? checkOutDate;
+  final int? guestCount;
   final String status;
   final DateTime createdAt;
 
@@ -22,6 +28,7 @@ class Reservation {
     this.id,
     required this.userId,
     required this.hotelId,
+    this.hotelName,
     required this.roomId,
     String? roomType,
     String? viewType,
@@ -31,8 +38,13 @@ class Reservation {
     int? boardPrice,
     int? nights,
     int? totalPrice,
+    this.totalPriceSnapshot,
+    this.qrToken,
     required this.startDate,
     required this.endDate,
+    this.checkInDate,
+    this.checkOutDate,
+    this.guestCount,
     this.status = 'pending',
     DateTime? createdAt,
   })  : roomType = roomType ?? '',
@@ -66,6 +78,8 @@ class Reservation {
         'boardPrice': boardPrice,
         'nights': nights,
         'totalPrice': totalPrice,
+        if (totalPriceSnapshot != null) 'totalPriceSnapshot': totalPriceSnapshot,
+        if (qrToken != null) 'qrToken': qrToken,
         'startDate': Timestamp.fromDate(startDate),
         'endDate': Timestamp.fromDate(endDate),
         'status': status,
@@ -118,6 +132,10 @@ class Reservation {
       boardPrice: (map['boardPrice'] is int) ? map['boardPrice'] as int : int.tryParse(map['boardPrice']?.toString() ?? '0') ?? 0,
       nights: (map['nights'] is int) ? map['nights'] as int : int.tryParse(map['nights']?.toString() ?? '0') ?? 0,
       totalPrice: (map['totalPrice'] is int) ? map['totalPrice'] as int : int.tryParse(map['totalPrice']?.toString() ?? '0') ?? 0,
+        totalPriceSnapshot: (map['totalPriceSnapshot'] is num)
+          ? (map['totalPriceSnapshot'] as num).toDouble()
+          : double.tryParse(map['totalPriceSnapshot']?.toString() ?? ''),
+        qrToken: map['qrToken'] as String?,
       startDate: startDate,
       endDate: endDate,
       status: map['status'] as String? ?? 'pending',
@@ -138,6 +156,8 @@ class Reservation {
     int? boardPrice,
     int? nights,
     int? totalPrice,
+    double? totalPriceSnapshot,
+    String? qrToken,
     DateTime? startDate,
     DateTime? endDate,
     String? status,
@@ -156,6 +176,8 @@ class Reservation {
       boardPrice: boardPrice ?? this.boardPrice,
       nights: nights ?? this.nights,
       totalPrice: totalPrice ?? this.totalPrice,
+      totalPriceSnapshot: totalPriceSnapshot ?? this.totalPriceSnapshot,
+      qrToken: qrToken ?? this.qrToken,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       status: status ?? this.status,
@@ -165,7 +187,7 @@ class Reservation {
 
   @override
   String toString() {
-    return 'Reservation{id: $id, userId: $userId, hotelId: $hotelId, roomId: $roomId, roomType: $roomType, viewType: $viewType, boardType: $boardType, basePrice: $basePrice, viewExtra: $viewExtra, boardPrice: $boardPrice, nights: $nights, totalPrice: $totalPrice, startDate: $startDate, endDate: $endDate, status: $status, createdAt: $createdAt}';
+    return 'Reservation{id: $id, userId: $userId, hotelId: $hotelId, roomId: $roomId, roomType: $roomType, viewType: $viewType, boardType: $boardType, basePrice: $basePrice, viewExtra: $viewExtra, boardPrice: $boardPrice, nights: $nights, totalPrice: $totalPrice, totalPriceSnapshot: $totalPriceSnapshot, qrToken: $qrToken, startDate: $startDate, endDate: $endDate, status: $status, createdAt: $createdAt}';
   }
 
   static int _resolveNights(int? provided, DateTime startDate, DateTime endDate) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gestion_hotel/utils/app_theme.dart';
 import '../../../models/hotel.dart';
 import '../../../services/firestore_service.dart';
 
@@ -58,44 +59,63 @@ class _AddHotelScreenState extends State<AddHotelScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ajouter un hôtel')),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Ajouter un hôtel'),
+        backgroundColor: AppColors.background,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: _nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Nom de l\'hôtel'),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Entrez le nom' : null,
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _cityCtrl,
-                    decoration: const InputDecoration(labelText: 'Ville'),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Entrez la ville' : null,
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _addressCtrl,
-                    decoration: const InputDecoration(labelText: 'Adresse'),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Entrez l\'adresse' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _loading ? null : _submit,
-                      child: _loading ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Ajouter'),
+        padding: const EdgeInsets.all(AppSpacing.screenPadding),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.cardPadding),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.all(AppBorderRadius.xl),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppShadows.subtle,
+          ),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Informations de l\'hôtel', style: AppTextStyles.headline4),
+                const SizedBox(height: AppSpacing.lg),
+                TextFormField(
+                  controller: _nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Nom de l\'hôtel'),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Entrez le nom' : null,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: _cityCtrl,
+                  decoration: const InputDecoration(labelText: 'Ville'),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Entrez la ville' : null,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: _addressCtrl,
+                  decoration: const InputDecoration(labelText: 'Adresse'),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Entrez l\'adresse' : null,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _loading ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(AppBorderRadius.lg)),
                     ),
+                    child: _loading
+                        ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('Ajouter'),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

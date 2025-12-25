@@ -216,7 +216,7 @@ class _RoomCardState extends State<RoomCard>
 
                     /// Price
                     Text(
-                      '${widget.pricePerNight.toStringAsFixed(2)}€ / nuit',
+                      '${widget.pricePerNight.toStringAsFixed(2)} DH / nuit',
                       style: AppTextStyles.body1.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gestion_hotel/models/room.dart';
 import 'package:gestion_hotel/services/firestore_service.dart';
+import 'package:gestion_hotel/utils/app_theme.dart';
 
 class EditRoomScreen extends StatefulWidget {
   final Room room;
@@ -150,108 +151,125 @@ class _EditRoomScreenState extends State<EditRoomScreen> {
           ),
         ],
       ),
+      backgroundColor: AppColors.background,
       body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              _buildField(
-                TextFormField(
-                  key: const Key('editRoomNumberField'),
-                  controller: _numberCtrl,
-                  decoration: const InputDecoration(labelText: 'Numéro'),
-                  keyboardType: TextInputType.number,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Entrez le numéro' : null,
+        padding: const EdgeInsets.all(AppSpacing.screenPadding),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.cardPadding),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.all(AppBorderRadius.xl),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppShadows.subtle,
+          ),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                Text('Chambre ${widget.room.number}', style: AppTextStyles.headline4),
+                Text('Type ${widget.room.type} · Vue ${widget.room.view}', style: AppTextStyles.body3.copyWith(color: AppColors.textSecondary)),
+                const SizedBox(height: AppSpacing.lg),
+                _buildField(
+                  TextFormField(
+                    key: const Key('editRoomNumberField'),
+                    controller: _numberCtrl,
+                    decoration: const InputDecoration(labelText: 'Numéro'),
+                    keyboardType: TextInputType.number,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Entrez le numéro' : null,
+                  ),
                 ),
-              ),
 
-              // TYPE
-              _buildField(
-                DropdownButtonFormField<String>(
-                  key: const Key('editRoomTypeDropdown'),
-                  initialValue: _type,
-                  items: const [
-                    DropdownMenuItem(value: 'double', child: Text('Double')),
-                    DropdownMenuItem(value: 'triple', child: Text('Triple')),
-                    DropdownMenuItem(value: 'suite', child: Text('Suite')),
-                  ],
-                  onChanged: (v) => setState(() => _type = v ?? 'double'),
-                  decoration: const InputDecoration(labelText: 'Type de chambre'),
+                // TYPE
+                _buildField(
+                  DropdownButtonFormField<String>(
+                    key: const Key('editRoomTypeDropdown'),
+                    initialValue: _type,
+                    items: const [
+                      DropdownMenuItem(value: 'double', child: Text('Double')),
+                      DropdownMenuItem(value: 'triple', child: Text('Triple')),
+                      DropdownMenuItem(value: 'suite', child: Text('Suite')),
+                    ],
+                    onChanged: (v) => setState(() => _type = v ?? 'double'),
+                    decoration: const InputDecoration(labelText: 'Type de chambre'),
+                  ),
                 ),
-              ),
 
-              // VIEW
-              _buildField(
-                DropdownButtonFormField<String>(
-                  key: const Key('editRoomViewDropdown'),
-                  initialValue: _view,
-                  items: const [
-                    DropdownMenuItem(value: 'jardin', child: Text('Vue Jardin')),
-                    DropdownMenuItem(value: 'piscine', child: Text('Vue Piscine')),
-                    DropdownMenuItem(value: 'mer', child: Text('Vue Mer')),
-                  ],
-                  onChanged: (v) => setState(() => _view = v ?? 'jardin'),
-                  decoration: const InputDecoration(labelText: 'Vue'),
+                // VIEW
+                _buildField(
+                  DropdownButtonFormField<String>(
+                    key: const Key('editRoomViewDropdown'),
+                    initialValue: _view,
+                    items: const [
+                      DropdownMenuItem(value: 'jardin', child: Text('Vue Jardin')),
+                      DropdownMenuItem(value: 'piscine', child: Text('Vue Piscine')),
+                      DropdownMenuItem(value: 'mer', child: Text('Vue Mer')),
+                    ],
+                    onChanged: (v) => setState(() => _view = v ?? 'jardin'),
+                    decoration: const InputDecoration(labelText: 'Vue'),
+                  ),
                 ),
-              ),
 
-              // BASE PRICE
-              _buildField(
-                TextFormField(
-                  key: const Key('editRoomBasePriceField'),
-                  controller: _basePriceCtrl,
-                  decoration: const InputDecoration(labelText: 'Prix de base (€)'),
-                  keyboardType: TextInputType.number,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Entrez le prix de base' : null,
+                // BASE PRICE
+                _buildField(
+                  TextFormField(
+                    key: const Key('editRoomBasePriceField'),
+                    controller: _basePriceCtrl,
+                    decoration: const InputDecoration(labelText: 'Prix de base (DH)'),
+                    keyboardType: TextInputType.number,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Entrez le prix de base' : null,
+                  ),
                 ),
-              ),
 
-              // VIEW EXTRA
-              _buildField(
-                TextFormField(
-                  key: const Key('editRoomViewExtraField'),
-                  controller: _viewExtraCtrl,
-                  decoration: const InputDecoration(labelText: 'Supplément vue (€)'),
-                  keyboardType: TextInputType.number,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Entrez le supplément vue' : null,
+                // VIEW EXTRA
+                _buildField(
+                  TextFormField(
+                    key: const Key('editRoomViewExtraField'),
+                    controller: _viewExtraCtrl,
+                    decoration: const InputDecoration(labelText: 'Supplément vue (DH)'),
+                    keyboardType: TextInputType.number,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Entrez le supplément vue' : null,
+                  ),
                 ),
-              ),
 
-              // CAPACITY
-              _buildField(
-                TextFormField(
-                  key: const Key('editRoomCapacityField'),
-                  controller: _capacityCtrl,
-                  decoration: const InputDecoration(labelText: 'Capacité'),
-                  keyboardType: TextInputType.number,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Entrez la capacité' : null,
+                // CAPACITY
+                _buildField(
+                  TextFormField(
+                    key: const Key('editRoomCapacityField'),
+                    controller: _capacityCtrl,
+                    decoration: const InputDecoration(labelText: 'Capacité'),
+                    keyboardType: TextInputType.number,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Entrez la capacité' : null,
+                  ),
                 ),
-              ),
 
-              // AVAILABLE SWITCH
-              SwitchListTile(
-                title: const Text('Disponible'),
-                value: _isAvailable,
-                onChanged: (v) => setState(() => _isAvailable = v),
-              ),
-
-              // SAVE BUTTON
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  key: const Key('saveRoomButton'),
-                  onPressed: _loading ? null : _save,
-                  child: _loading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Enregistrer'),
+                // AVAILABLE SWITCH
+                SwitchListTile(
+                  title: const Text('Disponible'),
+                  value: _isAvailable,
+                  onChanged: (v) => setState(() => _isAvailable = v),
                 ),
-              ),
-            ],
+
+                // SAVE BUTTON
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    key: const Key('saveRoomButton'),
+                    onPressed: _loading ? null : _save,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(AppBorderRadius.lg)),
+                    ),
+                    child: _loading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Enregistrer'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

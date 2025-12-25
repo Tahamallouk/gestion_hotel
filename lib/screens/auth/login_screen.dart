@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gestion_hotel/services/auth_service.dart';
 import 'package:gestion_hotel/screens/auth/register_screen.dart';
+import 'package:gestion_hotel/utils/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +15,7 @@ class LoginScreenState extends State<LoginScreen> {
   final _passCtrl = TextEditingController();
   final AuthService _authService = AuthService();
   bool _loading = false;
+  bool _obscure = true;
 
   @override
   void dispose() {
@@ -33,8 +35,17 @@ class LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      await _authService.signInWithEmail(_emailCtrl.text.trim(), _passCtrl.text.trim());
-      // success: the Stream in main will navigate to HomeScreen
+      // Get role during login
+      final role = await _authService.signInWithEmailAndGetRole(
+        _emailCtrl.text.trim(), 
+        _passCtrl.text.trim()
+      );
+      
+      print('🎯 Role récupéré: $role'); // Log console pour afficher le rôle
+      
+      // Success: the Stream in main will handle navigation automatically
+      // based on the user's role in AppShell
+      
     } catch (e) {
       final msg = AuthService.formatException(e);
       if (!mounted) return;
@@ -68,40 +79,81 @@ class LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Connexion')),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+      body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPaddingHorizontal, vertical: AppSpacing.xl),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
+              constraints: const BoxConstraints(maxWidth: 520),
               child: Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.allXl),
+                elevation: 2,
                 child: Padding(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: const EdgeInsets.all(AppSpacing.xl),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.lock_outline, size: 72, color: Colors.deepPurple),
-                      const SizedBox(height: 12),
+                      Row(
+                        children: const [
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: AppColors.primary,
+                            child: Icon(Icons.lock_outline, color: AppColors.textOnPrimary, size: 28),
+                          ),
+                          SizedBox(width: AppSpacing.lg),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Heureux de vous revoir', style: AppTextStyles.headline3),
+                              SizedBox(height: 4),
+                              Text('Connectez-vous pour accéder à votre tableau de bord', style: AppTextStyles.body2),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
                       Form(
                         key: _formKey,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
                         child: Column(
                           children: [
                             TextFormField(
                               controller: _emailCtrl,
                               keyboardType: TextInputType.emailAddress,
-                              decoration: const InputDecoration(labelText: 'Email'),
-                              validator: (v) => (v == null || v.isEmpty) ? 'Email requis' : null,
+                              decoration: const InputDecoration(
+                                labelText: 'Email',
+                                prefixIcon: Icon(Icons.alternate_email_outlined),
+                              ),
+                              validator: (v) {
+                                if (v == null || v.isEmpty) return 'Email requis';
+                                if (!v.contains('@')) return 'Email invalide';
+                                return null;
+                              },
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: AppSpacing.lg),
                             TextFormField(
                               controller: _passCtrl,
-                              obscureText: true,
-                              decoration: const InputDecoration(labelText: 'Mot de passe'),
-                              validator: (v) => (v == null || v.isEmpty) ? 'Mot de passe requis' : null,
+                              obscureText: _obscure,
+                              decoration: InputDecoration(
+                                labelText: 'Mot de passe',
+                                prefixIcon: const Icon(Icons.lock_outline),
+                                suffixIcon: IconButton(
+                                  icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                                  onPressed: _loading
+                                      ? null
+                                      : () => setState(() {
+                                            _obscure = !_obscure;
+                                          }),
+                                ),
+                              ),
+                              validator: (v) {
+                                if (v == null || v.isEmpty) return 'Mot de passe requis';
+                                if (v.length < 8) return '8 caractères minimum';
+                                return null;
+                              },
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: AppSpacing.sm),
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
@@ -109,7 +161,7 @@ class LoginScreenState extends State<LoginScreen> {
                                 child: const Text('Mot de passe oublié ?'),
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: AppSpacing.lg),
                             _loading
                                 ? const SizedBox(height: 48, child: Center(child: CircularProgressIndicator()))
                                 : SizedBox(
@@ -117,19 +169,25 @@ class LoginScreenState extends State<LoginScreen> {
                                     height: 48,
                                     child: ElevatedButton(
                                       onPressed: _login,
-                                      style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
                                       child: const Text('Se connecter'),
                                     ),
                                   ),
-                            const SizedBox(height: 12),
-                            OutlinedButton(
-                              onPressed: _loading
-                                  ? null
-                                  : () {
-                                      Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
-                                    },
-                              child: const Text("Créer un compte"),
-                            )
+                            const SizedBox(height: AppSpacing.md),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: OutlinedButton(
+                                onPressed: _loading
+                                    ? null
+                                    : () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                                        );
+                                      },
+                                child: const Text('Créer un compte'),
+                              ),
+                            ),
                           ],
                         ),
                       ),

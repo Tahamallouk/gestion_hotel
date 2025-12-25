@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Room {
   final String? id;
   final String hotelId;
@@ -6,8 +8,12 @@ class Room {
   final String view; // jardin, piscine, mer
   final int basePrice;
   final int viewExtra;
-  final int capacity;
+  final int? capacity;
   final bool isAvailable;
+  final String? imageUrl;
+  final double? pricePerNight;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
 
   Room({
     this.id,
@@ -18,11 +24,16 @@ class Room {
     int? basePrice,
     int? viewExtra,
     double? price,
-    this.capacity = 2,
+    this.capacity,
     this.isAvailable = true,
+    this.imageUrl,
+    this.pricePerNight,
+    DateTime? createdAt,
+    this.updatedAt,
   })  : view = view ?? '',
         basePrice = basePrice ?? (price != null ? price.round() : 0),
-        viewExtra = viewExtra ?? 0;
+        viewExtra = viewExtra ?? 0,
+        createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toMap() => {
         if (id != null) 'id': id,
@@ -34,9 +45,34 @@ class Room {
         'viewExtra': viewExtra,
         'capacity': capacity,
         'isAvailable': isAvailable,
+        'imageUrl': imageUrl,
+        'createdAt': Timestamp.fromDate(createdAt),
+        if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
       };
 
   factory Room.fromMap(Map<String, dynamic> map) {
+    final dynamic ts = map['createdAt'];
+    DateTime created;
+    if (ts is Timestamp) {
+      created = ts.toDate();
+    } else if (ts is int) {
+      created = DateTime.fromMillisecondsSinceEpoch(ts);
+    } else if (ts is String) {
+      created = DateTime.tryParse(ts) ?? DateTime.now();
+    } else {
+      created = DateTime.now();
+    }
+
+    final dynamic updTs = map['updatedAt'];
+    DateTime? updated;
+    if (updTs is Timestamp) {
+      updated = updTs.toDate();
+    } else if (updTs is int) {
+      updated = DateTime.fromMillisecondsSinceEpoch(updTs);
+    } else if (updTs is String) {
+      updated = DateTime.tryParse(updTs);
+    }
+
     return Room(
       id: map['id'] as String?,
       hotelId: map['hotelId'] as String? ?? '',
@@ -55,6 +91,9 @@ class Room {
           ? map['capacity'] as int
           : int.tryParse(map['capacity']?.toString() ?? '2') ?? 2,
       isAvailable: map['isAvailable'] as bool? ?? true,
+      imageUrl: map['imageUrl'] as String? ?? '',
+      createdAt: created,
+      updatedAt: updated,
     );
   }
 
@@ -68,6 +107,9 @@ class Room {
     int? viewExtra,
     int? capacity,
     bool? isAvailable,
+    String? imageUrl,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return Room(
       id: id ?? this.id,
@@ -79,11 +121,14 @@ class Room {
       viewExtra: viewExtra ?? this.viewExtra,
       capacity: capacity ?? this.capacity,
       isAvailable: isAvailable ?? this.isAvailable,
+      imageUrl: imageUrl ?? this.imageUrl,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
   @override
   String toString() {
-    return 'Room{id: $id, hotelId: $hotelId, number: $number, type: $type, view: $view, basePrice: $basePrice, viewExtra: $viewExtra, capacity: $capacity, isAvailable: $isAvailable}';
+    return 'Room{id: $id, hotelId: $hotelId, number: $number, type: $type, view: $view, basePrice: $basePrice, viewExtra: $viewExtra, capacity: $capacity, isAvailable: $isAvailable, imageUrl: $imageUrl}';
   }
 }
