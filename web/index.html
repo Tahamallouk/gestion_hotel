@@ -20,6 +20,9 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
 
+  <!-- Google Maps API key for web maps -->
+  <meta name="google-maps-api-key" content="AIzaSyBTFXU1YhKw53bhgjsUDswEMDYaDpWFjng">
+
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -33,6 +36,18 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <script>
+    // Conditionally load Google Maps JS for web if a key is provided in the meta tag above.
+    (function loadGoogleMaps() {
+      const meta = document.querySelector('meta[name="google-maps-api-key"]');
+      const key = meta && meta.content && meta.content.trim();
+      if (!key) return; // no key set; map widgets will show placeholder
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${key}`;
+      script.async = true;
+      document.head.appendChild(script);
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

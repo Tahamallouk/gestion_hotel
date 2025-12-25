@@ -21,17 +21,40 @@ void main() {
 
   test('End-to-end rooms + reservation flow', () async {
     // 1. Create a temporary hotel
-    final hotel = Hotel(name: 'TestHotel E2E', city: 'TestCity', address: 'TestAddr');
+    final hotel = Hotel(
+      name: 'TestHotel E2E',
+      city: 'TestCity',
+      address: 'TestAddr',
+      imageUrl: 'https://example.com/hotel.jpg',
+      rating: 4.5,
+      location: 'TestLocation',
+      price: 120,
+    );
     hotelId = await service.addHotel(hotel);
     expect(hotelId, isNotNull);
 
     // 2. Add a room
     final uniqueNumber = DateTime.now().millisecondsSinceEpoch % 100000;
-    final room = Room(hotelId: hotelId!, number: uniqueNumber, type: 'Test', capacity: 2, basePrice: 50, viewExtra: 10, isAvailable: true);
+    final room = Room(
+      hotelId: hotelId!,
+      number: uniqueNumber,
+      type: 'Test',
+      view: 'standard',
+      capacity: 2,
+      basePrice: 50,
+      viewExtra: 10,
+      isAvailable: true,
+      imageUrl: '',
+    );
     await service.addRoom(room);
 
     // find the room doc
-    final roomSnap = await db.collection('rooms').where('hotelId', isEqualTo: hotelId).where('number', isEqualTo: uniqueNumber).limit(1).get();
+    final roomSnap = await db
+        .collection('rooms')
+        .where('hotelId', isEqualTo: hotelId)
+        .where('number', isEqualTo: uniqueNumber)
+        .limit(1)
+        .get();
     expect(roomSnap.docs, isNotEmpty);
     roomId = roomSnap.docs.first.id;
 
@@ -52,7 +75,6 @@ void main() {
       viewExtra: 40,
       boardPrice: 350,
       nights: 1,
-      totalPrice: 490,
       startDate: DateTime.now(),
       endDate: DateTime.now().add(const Duration(days: 1)),
     );
@@ -62,9 +84,15 @@ void main() {
     final resDoc = await db.collection('reservations').doc(reservationId).get();
     expect(resDoc.exists, isTrue);
     final roomAfter = await db.collection('rooms').doc(roomId).get();
-    expect((roomAfter.data() ?? {})['isAvailable'], true);
+    expect((roomAfter.data() ?? {})['isAvailable'], false);
 
     // 5. Delete room
+    // 6. Cancel reservation should free the room
+    await service.cancelReservation(reservationId!);
+    final roomAfterCancel = await db.collection('rooms').doc(roomId).get();
+    expect((roomAfterCancel.data() ?? {})['isAvailable'], true);
+
+    // 7. Delete room
     await service.deleteRoom(roomId!);
     final deleted = await db.collection('rooms').doc(roomId).get();
     expect(deleted.exists, isFalse);
@@ -73,6 +101,145 @@ void main() {
     await db.collection('reservations').doc(reservationId).delete();
     await db.collection('hotels').doc(hotelId).delete();
   }, timeout: Timeout(Duration(minutes: 5)));
+
+  test('Reservation overlap is prevented transactionally', () async {
+    final hotel = Hotel(
+      name: 'OverlapTest',
+      city: 'City',
+      address: 'Addr',
+      imageUrl: '',
+      rating: 4.0,
+      location: 'Loc',
+      price: 100,
+    );
+    final hId = await service.addHotel(hotel);
+
+    final room = Room(
+      hotelId: hId,
+      number: 101,
+      type: 'std',
+      view: 'city',
+      capacity: 2,
+      basePrice: 80,
+      viewExtra: 10,
+      isAvailable: true,
+      imageUrl: '',
+    );
+    await service.addRoom(room);
+
+    final roomSnap = await db
+        .collection('rooms')
+        .where('hotelId', isEqualTo: hId)
+        .where('number', isEqualTo: 101)
+        .limit(1)
+        .get();
+    final rId = roomSnap.docs.first.id;
+
+    final now = DateTime.now();
+    final first = Reservation(
+      roomId: rId,
+      userId: 'u1',
+      hotelId: hId,
+      roomType: 'std',
+      viewType: 'city',
+      boardType: 'bb',
+      basePrice: 80,
+      viewExtra: 10,
+      boardPrice: 0,
+      nights: 2,
+      startDate: now,
+      endDate: now.add(const Duration(days: 2)),
+    );
+
+    await service.createReservation(first);
+
+    final overlapping = Reservation(
+      roomId: rId,
+      userId: 'u2',
+      hotelId: hId,
+      roomType: 'std',
+      viewType: 'city',
+      boardType: 'bb',
+      basePrice: 80,
+      viewExtra: 10,
+      boardPrice: 0,
+      nights: 2,
+      startDate: now.add(const Duration(days: 1)),
+      endDate: now.add(const Duration(days: 3)),
+    );
+
+    expect(
+      () => service.createReservation(overlapping),
+      throwsA(isA<StateError>()),
+    );
+  });
+
+  test('updateReservationStatus locks and frees room', () async {
+    final hotel = Hotel(
+      name: 'StatusTest',
+      city: 'City',
+      address: 'Addr',
+      imageUrl: '',
+      rating: 4.0,
+      location: 'Loc',
+      price: 100,
+    );
+    final hId = await service.addHotel(hotel);
+
+    final room = Room(
+      hotelId: hId,
+      number: 202,
+      type: 'std',
+      view: 'city',
+      capacity: 2,
+      basePrice: 80,
+      viewExtra: 10,
+      isAvailable: true,
+      imageUrl: '',
+    );
+    await service.addRoom(room);
+    final rSnap = await db
+        .collection('rooms')
+        .where('hotelId', isEqualTo: hId)
+        .where('number', isEqualTo: 202)
+        .limit(1)
+        .get();
+    final rId = rSnap.docs.first.id;
+
+    final now = DateTime.now();
+    final res = Reservation(
+      roomId: rId,
+      userId: 'u3',
+      hotelId: hId,
+      roomType: 'std',
+      viewType: 'city',
+      boardType: 'bb',
+      basePrice: 80,
+      viewExtra: 10,
+      boardPrice: 0,
+      nights: 1,
+      startDate: now,
+      endDate: now.add(const Duration(days: 1)),
+    );
+
+    final resId = await service.createReservation(res);
+    final resDoc = await db.collection('reservations').doc(resId).get();
+    expect(resDoc.data()!['qrToken'], isNotEmpty);
+
+    // By default room locked
+    var roomDoc = await db.collection('rooms').doc(rId).get();
+    expect((roomDoc.data() ?? {})['isAvailable'], false);
+
+    // Move to checkedIn keeps locked
+    await service.updateReservationStatus(resId, 'checkedIn');
+    roomDoc = await db.collection('rooms').doc(rId).get();
+    expect((roomDoc.data() ?? {})['isAvailable'], false);
+
+    // Cancel frees room
+    await service.updateReservationStatus(resId, 'cancelled');
+    roomDoc = await db.collection('rooms').doc(rId).get();
+    expect((roomDoc.data() ?? {})['isAvailable'], true);
+  });
 
   // ========== PHASE 5: ADMIN STATISTICS TESTS ==========
 
@@ -176,6 +343,177 @@ void main() {
       for (final count in perDay.values) {
         expect(count, greaterThanOrEqualTo(0));
       }
+    });
+  });
+
+  group('Dashboard stats (new aliases)', () {
+    late FakeFirebaseFirestore localDb;
+    late FirestoreService localService;
+
+    setUp(() {
+      localDb = FakeFirebaseFirestore();
+      localService = FirestoreService(firestore: localDb);
+    });
+
+      Future<void> seedBasicData() async {
+      // Hotels
+      final h1 = await localService.addHotel(Hotel(
+        name: 'H1',
+        city: 'c',
+        address: 'a',
+        imageUrl: '',
+        rating: 4,
+        location: 'l',
+        price: 100,
+      ));
+      final h2 = await localService.addHotel(Hotel(
+        name: 'H2',
+        city: 'c',
+        address: 'a',
+        imageUrl: '',
+        rating: 4,
+        location: 'l',
+        price: 100,
+      ));
+
+      // Rooms (4 total, 2 unavailable)
+      final rooms = [
+        Room(
+          hotelId: h1,
+          number: 1,
+          type: 'std',
+          view: 'city',
+          capacity: 2,
+          basePrice: 80,
+          viewExtra: 10,
+          isAvailable: true,
+          imageUrl: '',
+        ),
+        Room(
+          hotelId: h1,
+          number: 2,
+          type: 'std',
+          view: 'city',
+          capacity: 2,
+          basePrice: 90,
+          viewExtra: 5,
+          isAvailable: false,
+          imageUrl: '',
+        ),
+        Room(
+          hotelId: h2,
+          number: 3,
+          type: 'std',
+          view: 'city',
+          capacity: 2,
+          basePrice: 110,
+          viewExtra: 0,
+          isAvailable: false,
+          imageUrl: '',
+        ),
+        Room(
+          hotelId: h2,
+          number: 4,
+          type: 'std',
+          view: 'city',
+          capacity: 2,
+          basePrice: 120,
+          viewExtra: 0,
+          isAvailable: true,
+          imageUrl: '',
+        ),
+      ];
+      for (final r in rooms) {
+        await localService.addRoom(r);
+      }
+
+      final now = DateTime.now();
+
+      // Reservations: 3 total (2 for h1, 1 for h2)
+      final res1 = Reservation(
+        userId: 'u1',
+        hotelId: h1,
+        roomId: 'r1',
+        roomType: 'std',
+        viewType: 'city',
+        boardType: 'bb',
+        basePrice: 100,
+        viewExtra: 20,
+        boardPrice: 0,
+        nights: 2,
+        startDate: now,
+        endDate: now.add(const Duration(days: 2)),
+        totalPriceSnapshot: 240,
+      );
+
+      final res2 = Reservation(
+        userId: 'u2',
+        hotelId: h1,
+        roomId: 'r2',
+        roomType: 'std',
+        viewType: 'city',
+        boardType: 'bb',
+        basePrice: 80,
+        viewExtra: 10,
+        boardPrice: 0,
+        nights: 1,
+        startDate: now.subtract(const Duration(days: 1)),
+        endDate: now,
+        totalPriceSnapshot: 90,
+      );
+
+      final res3 = Reservation(
+        userId: 'u3',
+        hotelId: h2,
+        roomId: 'r3',
+        roomType: 'std',
+        viewType: 'city',
+        boardType: 'bb',
+        basePrice: 120,
+        viewExtra: 0,
+        boardPrice: 0,
+        nights: 1,
+        startDate: now.subtract(const Duration(days: 2)),
+        endDate: now.subtract(const Duration(days: 1)),
+        totalPriceSnapshot: 120,
+      );
+
+      for (final res in [res1, res2, res3]) {
+        await localDb.collection('reservations').add(res.toMap());
+      }
+    }
+
+    test('getTotalReservations matches seeded count', () async {
+          await seedBasicData();
+      final total = await localService.getTotalReservations();
+      expect(total, 3);
+    });
+
+    test('getTotalRevenue sums snapshot totals', () async {
+          await seedBasicData();
+      final revenue = await localService.getTotalRevenue();
+      expect(revenue, closeTo(240 + 90 + 120, 0.001));
+    });
+
+    test('getOccupancyRate uses room availability', () async {
+          await seedBasicData();
+      final rate = await localService.getOccupancyRate();
+      expect(rate, closeTo(50.0, 0.001)); // 2/4 occupied
+    });
+
+    test('getReservationsByDay returns recent buckets', () async {
+          await seedBasicData();
+      final byDay = await localService.getReservationsByDay(days: 3);
+      expect(byDay.length, 3);
+      expect(byDay.values.reduce((a, b) => a + b), 3);
+    });
+
+    test('getTopHotels orders by reservation count', () async {
+          await seedBasicData();
+      final top = await localService.getTopHotels(limit: 2);
+      expect(top.first['hotelName'], anyOf('H1', 'H2'));
+      expect(top.first['reservationCount'], greaterThanOrEqualTo(top.last['reservationCount'] as int));
+      expect(top.first['reservationCount'], 2);
     });
   });
 

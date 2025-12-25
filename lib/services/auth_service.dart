@@ -32,6 +32,42 @@ class AuthService {
     return _auth.signInWithEmailAndPassword(email: email, password: password);
   }
 
+  /// Sign in with email and password, then return user role
+  Future<String?> signInWithEmailAndGetRole(String email, String password) async {
+    try {
+      debugPrint('🔐 === LOGIN START ===');
+      debugPrint('📧 Email: $email');
+      
+      // 1. Authenticate with Firebase Auth
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email, 
+        password: password
+      );
+      
+      final user = userCredential.user;
+      if (user == null) {
+        debugPrint('❌ User is null after authentication');
+        return null;
+      }
+      
+      debugPrint('✅ Firebase Auth successful');
+      debugPrint('   UID: ${user.uid}');
+      
+      // 2. Get user role from Firestore
+      debugPrint('📖 Reading user role from Firestore...');
+      final role = await _firestore.getUserRole(user.uid);
+      
+      debugPrint('👤 User role: $role');
+      debugPrint('🎉 === LOGIN SUCCESS ===');
+      
+      return role;
+    } catch (e) {
+      debugPrint('❌ === LOGIN ERROR ===');
+      debugPrint('   Error: $e');
+      rethrow;
+    }
+  }
+
   Future<User?> registerWithEmail(
     String email,
     String password, {

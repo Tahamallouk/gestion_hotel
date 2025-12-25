@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:gestion_hotel/services/firestore_service.dart';
 import 'package:gestion_hotel/services/auth_service.dart';
+import 'package:gestion_hotel/services/firestore_service.dart';
+import 'package:gestion_hotel/utils/app_theme.dart';
 import 'package:gestion_hotel/widgets/stat_card_advanced.dart';
 
 /// Admin Hotel Detail Screen - Detailed view of a single hotel
@@ -136,6 +137,7 @@ class _AdminHotelDetailScreenState extends State<AdminHotelDetailScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
+        backgroundColor: AppColors.background,
         appBar: AppBar(title: const Text('Détail de l\'hôtel')),
         body: const Center(child: CircularProgressIndicator()),
       );
@@ -143,6 +145,7 @@ class _AdminHotelDetailScreenState extends State<AdminHotelDetailScreen> {
 
     if (_errorMessage != null) {
       return Scaffold(
+        backgroundColor: AppColors.background,
         appBar: AppBar(title: const Text('Détail de l\'hôtel')),
         body: Center(
           child: Column(
@@ -167,9 +170,12 @@ class _AdminHotelDetailScreenState extends State<AdminHotelDetailScreen> {
     }
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(widget.hotelName),
         elevation: 0,
+        backgroundColor: AppColors.background,
+        foregroundColor: AppColors.textPrimary,
         actions: [
           PopupMenuButton(
             itemBuilder: (context) => [
@@ -202,146 +208,134 @@ class _AdminHotelDetailScreenState extends State<AdminHotelDetailScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.screenPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hôtel info
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.hotelName,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.cardPadding),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: AppBorderRadius.allXl,
+                border: Border.all(color: AppColors.border),
+                boxShadow: AppShadows.subtle,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.hotelName, style: AppTextStyles.headline3),
+                  const SizedBox(height: AppSpacing.xs),
+                  if (_hotelData?['address'] != null)
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            _hotelData!['address'] as String? ?? '',
+                            style: AppTextStyles.body3.copyWith(color: AppColors.textSecondary),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    if (_hotelData?['address'] != null)
-                      Row(
+                  if (_hotelData?['phone'] != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.sm),
+                      child: Row(
                         children: [
-                          const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _hotelData!['address'] as String? ?? '',
-                              style: const TextStyle(color: Colors.grey),
-                            ),
+                          const Icon(Icons.phone, size: 16, color: AppColors.textSecondary),
+                          const SizedBox(width: AppSpacing.xs),
+                          Text(
+                            _hotelData!['phone'] as String? ?? '',
+                            style: AppTextStyles.body3.copyWith(color: AppColors.textSecondary),
                           ),
                         ],
                       ),
-                    if (_hotelData?['phone'] != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.phone, size: 16, color: Colors.grey),
-                            const SizedBox(width: 8),
-                            Text(
-                              _hotelData!['phone'] as String? ?? '',
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-
-            // Key Metrics
-            const Text(
-              'Statistiques',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.lg),
+            Text('Statistiques', style: AppTextStyles.headline4),
+            const SizedBox(height: AppSpacing.sm),
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
+              mainAxisSpacing: AppSpacing.md,
+              crossAxisSpacing: AppSpacing.md,
               childAspectRatio: 1.1,
               children: [
                 StatCardAdvanced(
                   title: 'Chambres',
                   value: _totalRooms.toString(),
                   icon: Icons.hotel,
-                  color: Colors.blue,
+                  color: AppColors.primary,
                   subtitle: 'Total',
                 ),
                 StatCardAdvanced(
                   title: 'Occupées',
                   value: _occupiedRooms.toString(),
                   icon: Icons.lock,
-                  color: Colors.orange,
+                  color: AppColors.warning,
                   subtitle: 'En ce moment',
                 ),
                 StatCardAdvanced(
                   title: 'Taux d\'occupation',
                   value: '${_occupancyRate.toStringAsFixed(1)}%',
                   icon: Icons.percent,
-                  color: Colors.green,
+                  color: AppColors.success,
                   subtitle: 'Aujourd\'hui',
                 ),
                 StatCardAdvanced(
                   title: 'Réservations',
                   value: _totalReservations.toString(),
                   icon: Icons.calendar_today,
-                  color: Colors.purple,
+                  color: AppColors.accent,
                   subtitle: 'Total',
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-
-            // Actions
-            const Text(
-              'Actions rapides',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Voir les réservations - À implémenter')),
-                  );
-                },
-                icon: const Icon(Icons.calendar_month),
-                label: const Text('Voir les réservations'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+            const SizedBox(height: AppSpacing.lg),
+            Text('Actions rapides', style: AppTextStyles.headline4),
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              runSpacing: AppSpacing.sm,
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Voir les réservations - À implémenter')),
+                      );
+                    },
+                    icon: const Icon(Icons.calendar_month),
+                    label: const Text('Voir les réservations'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                      shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.allLg),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ajouter une chambre - À implémenter')),
-                  );
-                },
-                icon: const Icon(Icons.add_location),
-                label: const Text('Ajouter une chambre'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Ajouter une chambre - À implémenter')),
+                      );
+                    },
+                    icon: const Icon(Icons.add_location),
+                    label: const Text('Ajouter une chambre'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                      shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.allLg),
+                      side: const BorderSide(color: AppColors.border),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ],
         ),

@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Users: owner or admin
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Hotels: public read, admin write
+    match /hotels/{hotelId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Rooms: public read, admin write
+    match /rooms/{roomId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Reservations: private to owner; admin full access; immutable core fields
+    match /reservations/{reservationId} {
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+
+      // Create: owner only, enforce ownership and initial status
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'confirmed';
+
+      // Update: owner or admin, but core fields immutable (roomId/dates/qr/price snapshot)
+      allow update: if (isOwner(resource.data.userId) || isAdmin())
+        && request.resource.data.roomId == resource.data.roomId
+        && request.resource.data.startDate == resource.data.startDate
+        && request.resource.data.endDate == resource.data.endDate
+        && request.resource.data.qrToken == resource.data.qrToken
+        && request.resource.data.totalPriceSnapshot == resource.data.totalPriceSnapshot;
+
+      // Delete: admin only
+      allow delete: if isAdmin();
+    }
+
+    // Fallback: deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
